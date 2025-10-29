@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRegisterUserMutation } from "../redux/features/auth/authApi";
 
 const Register = () => {
   const [message, setMessage] = useState("");
@@ -7,6 +8,8 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [userName, setUserName] = useState("");
 
+  const [registerUser, { isloading }] = useRegisterUserMutation();
+  const navigate = useNavigate();
   const handleRegister = async (e) => {
     e.preventDefault();
     const data = {
@@ -14,7 +17,13 @@ const Register = () => {
       email,
       password,
     };
-    console.log(data);
+    try {
+      await registerUser(data).unwrap();
+      alert("Registration Successfull");
+      navigate("/login");
+    } catch (error) {
+      setMessage("Registration failed");
+    }
   };
   return (
     <section className="h-screen flex items-center justify-center">
