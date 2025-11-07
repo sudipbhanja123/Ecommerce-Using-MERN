@@ -76,7 +76,7 @@ const Navbar = () => {
         {/* logo */}
         <div className="nav__logo">
           <Link to="/">
-            Lebaba<span>.</span>
+            Bhanja<span>.</span>
           </Link>
         </div>
 
