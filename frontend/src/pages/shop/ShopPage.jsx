@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import productsData from "../../data/products.json";
 import ProductCards from "./ProductCards";
 import ShopFiltering from "./ShopFiltering";
+import { useFetchAllProductsQuery } from "../../redux/features/products/productsApi";
 const filters = {
   categories: ["all", "dress", "accessories", "jewellery", "cosmetics"],
   colors: ["all", "black", "red", "blue", "silver", "begie", "green"],
@@ -13,47 +14,83 @@ const filters = {
   ],
 };
 const ShopPage = () => {
-  const [products, setProducts] = useState(productsData);
+  // const [products, setProducts] = useState(productsData);
   const [filtersState, setFiltersState] = useState({
     category: "all",
     color: "all",
     priceRange: "",
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ProductsPerPage] = useState(8);
+
+  const { category, color, priceRange } = filtersState;
+
+  const [minPrice, maxPrice] = priceRange.split("-").map(Number);
+
+  const {
+    data: { products = [], totalPages, totalProduct } = {},
+    error,
+    isLoading,
+  } = useFetchAllProductsQuery({
+    category: category !== "all" ? category : "",
+    color: color !== "all" ? color : "",
+    minPrice: isNaN(minPrice) ? "" : minPrice,
+    maxPrice: isNaN(maxPrice) ? "" : maxPrice,
+    page: currentPage,
+    limit: ProductsPerPage,
+  });
+
   //Filtering function
-  const applyFilters = () => {
-    let filteredProducts = productsData;
-    if (filtersState.category && filtersState.category !== "all") {
-      filteredProducts = filteredProducts.filter(
-        (product) => product.category === filtersState.category
-      );
-    }
+  // const applyFilters = () => {
+  //   let filteredProducts = productsData;
+  //   if (filtersState.category && filtersState.category !== "all") {
+  //     filteredProducts = filteredProducts.filter(
+  //       (product) => product.category === filtersState.category
+  //     );
+  //   }
 
-    //Filtered by colors
-    if (filtersState.color && filtersState.color !== "all") {
-      filteredProducts = filteredProducts.filter(
-        (product) => product.color === filtersState.color
-      );
-    }
+  //   //Filtered by colors
+  //   if (filtersState.color && filtersState.color !== "all") {
+  //     filteredProducts = filteredProducts.filter(
+  //       (product) => product.color === filtersState.color
+  //     );
+  //   }
 
-    //filtered by price range
-    if (filtersState.priceRange) {
-      const [minPrice, maxPrice] = filtersState.priceRange
-        .split("-")
-        .map(Number);
-      filteredProducts = filteredProducts.filter(
-        (product) => product.price >= minPrice && product.price <= maxPrice
-      );
-    }
-    setProducts(filteredProducts);
-  };
+  //   //filtered by price range
+  //   if (filtersState.priceRange) {
+  //     const [minPrice, maxPrice] = filtersState.priceRange
+  //       .split("-")
+  //       .map(Number);
+  //     filteredProducts = filteredProducts.filter(
+  //       (product) => product.price >= minPrice && product.price <= maxPrice
+  //     );
+  //   }
+  //   setProducts(filteredProducts);
+  // };
 
-  useEffect(() => {
-    applyFilters();
-  }, [filtersState]);
+  // useEffect(() => {
+  //   applyFilters();
+  // }, [filtersState]);
+
+  // clear the filters
   const clearFilters = () => {
     setFiltersState({ category: "", color: "", priceRange: "" });
   };
-  console.log(products);
+
+  // handle paginatoing
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber > 0 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error Loading Products</div>;
+
+  const startProduct = (currentPage - 1) * ProductsPerPage + 1;
+  const endProduct = startProduct + products.length - 1;
+
   return (
     <>
       <section className="section__container bg-primary-light">
@@ -73,9 +110,40 @@ const ShopPage = () => {
           />
           <div>
             <h3 className="text-xl font-medium mb-4">
-              Products Available: {products.length}
+              Showing {startProduct} to {endProduct} of {totalProduct} products
             </h3>
             <ProductCards products={products} />
+
+            {/* Pagination controls */}
+            <div className="mt-6 flex justify-center">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md mr-2"
+              >
+                Previous
+              </button>
+              {[...Array(totalPages)].map((_, index) => (
+                <button
+                  onClick={() => handlePageChange(index + 1)}
+                  key={index}
+                  className={`px-4 py-2 ${
+                    currentPage === index + 1
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-300 text-gray-700"
+                  } rounded-md mx-1`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md ml-2"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </section>
